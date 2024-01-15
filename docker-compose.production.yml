@@ -3,17 +3,23 @@ version: "3.7"
 x-php: &php
   build:
     context: docker/php
-    dockerfile: php.development.dockerfile
+    dockerfile: php.production.dockerfile
   restart: unless-stopped
   working_dir: /srv
   volumes:
     - .:/srv
-    - ~/.composer:/home/composer/.composer
-    - ./vendor:/srv/vendor:delegated
+
+x-logging: &logging
+  logging:
+    driver: json-file
+    options:
+      max-size: 100m
+      max-file: 10
 
 services:
 
   traefik:
+    <<: *logging
     image: traefik:v3.0
     restart: unless-stopped
     command: >-
@@ -21,67 +27,79 @@ services:
       --entryPoints.web.http.redirections.entrypoint.to=web-secure
       --entryPoints.web.http.redirections.entrypoint.scheme=https
       --entryPoints.web-secure.address=:443
-      --api=true
-      --api.dashboard=true
+      --api=false
+      --api.dashboard=false
       --providers.docker=true
       --providers.docker.exposedByDefault=false
       --providers.file.directory=/srv/configs
       --providers.file.watch=true
+      --certificatesResolvers.lets-encrypt.acme.email=email@example.com
+      --certificatesResolvers.lets-encrypt.acme.storage=/srv/.certificates/acme.json
+      --certificatesResolvers.lets-encrypt.acme.tlsChallenge=true
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock
       - ./traefik:/srv
     labels:
-      - traefik.enable=true
+      - traefik.enable=false
       - traefik.http.routers.traefik.rule=Host(`traefik.docker.localhost`)
       - traefik.http.routers.traefik.service=api@internal
       - traefik.http.routers.traefik.tls=true
+      - traefik.http.routers.traefik.tls.certResolver=lets-encrypt
+      - traefik.http.routers.traefik.middlewares=basic-auth@file,www-to-https@file
       - traefik.http.services.traefik.loadBalancer.server.port=8080
 
   php:
     <<: *php
+    <<: *logging
     labels:
       - traefik.enable=true
       - traefik.http.routers.php.entryPoints=web-secure
       - traefik.http.routers.php.rule=Host(`app.docker.localhost`) || Host(`api.docker.localhost`)
       - traefik.http.routers.php.tls=true
+      - traefik.http.routers.php.tls.certResolver=lets-encrypt
+      - traefik.http.routers.php.middlewares=www-to-https@file
 
   queue:
     <<: *php
+    <<: *logging
     command: php artisan horizon
 
   scheduler:
     <<: *php
+    <<: *logging
     command: supercronic /srv/docker/php/config/schedule.cron
 
   mysql:
+    <<: *logging
     image: mysql:8.0-debian
     restart: unless-stopped
     volumes:
       - mysql-data:/var/lib/mysql
     environment:
       MYSQL_DATABASE: $DB_DATABASE
-      MYSQL_ALLOW_EMPTY_PASSWORD: true
-    ports:
-      - "3306:3306"
+      MYSQL_USER: $DB_USERNAME
+      MYSQL_PASSWORD: $DB_PASSWORD
 
   redis:
+    <<: *logging
     image: redis:7-alpine
     restart: unless-stopped
     volumes:
       - redis-data:/data
 
-  mailpit:
-    image: axllent/mailpit:v1.12
-    restart: unless-stopped
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.mailpit.entryPoints=web-secure
-      - traefik.http.routers.mailpit.rule=Host(`mailpit.docker.localhost`)
-      - traefik.http.routers.mailpit.tls=true
-      - traefik.http.services.mailpit.loadBalancer.server.port=8025
+  actions:
+    <<: *php
+    <<: *logging
+    restart: no
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "Running migration..."
+        php artisan migrate --force --step
 
 volumes:
   redis-data:

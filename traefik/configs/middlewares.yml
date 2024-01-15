@@ -4,3 +4,8 @@ http:
       basicAuth:
         users:
           - "admin:$apr1$XA084hcc$2Xx6yC2H2W.HjHPT2eKLL." # secret
+    www-to-https:
+      redirectRegex:
+        regex: "^https?://(?:www.)?(.+)"
+        replacement: "https://${1}"
+        permanent: true
