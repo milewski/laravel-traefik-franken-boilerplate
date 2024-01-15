@@ -1,0 +1,83 @@
+version: "3.7"
+
+x-php: &php
+  build:
+    context: docker/php
+    dockerfile: php.development.dockerfile
+  restart: unless-stopped
+  working_dir: /srv
+  volumes:
+    - .:/srv
+    - ~/.composer:/home/composer/.composer
+    - ./vendor:/srv/vendor:delegated
+
+services:
+
+  traefik:
+    image: traefik:v3.0
+    restart: unless-stopped
+    command: >-
+      --entryPoints.web.address=:80
+      --entryPoints.web.http.redirections.entrypoint.to=web-secure
+      --entryPoints.web.http.redirections.entrypoint.scheme=https
+      --entryPoints.web-secure.address=:443
+      --api=true
+      --api.dashboard=true
+      --providers.docker=true
+      --providers.docker.exposedByDefault=false
+      --providers.file.directory=/srv/configs
+      --providers.file.watch=true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik:/srv
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.traefik.rule=Host(`traefik.docker.localhost`)
+      - traefik.http.routers.traefik.service=api@internal
+      - traefik.http.routers.traefik.tls.options=mintls13@file
+      - traefik.http.services.traefik.loadBalancer.server.port=8080
+
+  php:
+    <<: *php
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.php.entryPoints=web-secure
+      - traefik.http.routers.php.rule=Host(`dashboard.docker.localhost`)
+      - traefik.http.routers.php.tls.options=mintls13@file
+
+  queue:
+    <<: *php
+    command: php artisan horizon
+
+  scheduler:
+    <<: *php
+    command: supercronic /srv/docker/php/config/laravel.cron
+
+#  mysql:
+#    image: mysql:8.0-debian
+#    command: --default-authentication-plugin=mysql_native_password
+#    restart: unless-stopped
+#    volumes:
+#      - mysql-data:/var/lib/mysql
+#    environment:
+#      MYSQL_ROOT_HOST: "%"
+#      MYSQL_ROOT_PASSWORD: $DB_PASSWORD
+#      MYSQL_DATABASE: $DB_DATABASE
+#      MYSQL_USER: $DB_USERNAME
+#      MYSQL_PASSWORD: $DB_PASSWORD
+#    ports:
+#      - "3306:3306"
+
+#  redis:
+#    image: redis:7-alpine
+#    command: redis-server --requirepass $REDIS_PASSWORD
+#    restart: unless-stopped
+#    volumes:
+#      - redis-data:/data
+
+volumes:
+  redis-data:
+  mysql-data:
