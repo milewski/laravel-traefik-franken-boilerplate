@@ -6,7 +6,7 @@ It addresses the most basic needs a developer has when running Laravel locally.
 ### The benefits of this boilerplate include:
 
 - Everything runs through HTTPS with self-signed certificates, providing an environment closely resembling production right on your local machine.
-- It does not require installing any development tools on your actual machine (except Docker), avoiding annoyance for developers who prefer to keep their development environment clean.
+- It does not require installing any development tools on your actual machine (except Docker), avoiding annoyance for developers who prefer to keep their development computer clean.
 - The setup instructions serve as an easy-to-follow guide for anyone onboarding to the project.
 - It also provides production-ready files to set up the same environment seamlessly and with ease on a production server.
 

@@ -1,4 +1,4 @@
-version: "3.7"
+version: "3.8"
 
 x-php: &php
   build:
@@ -8,6 +8,11 @@ x-php: &php
   working_dir: /srv
   volumes:
     - .:/srv
+  depends_on:
+    mysql:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
 
 x-logging: &logging
   logging:
@@ -27,6 +32,7 @@ services:
       --entryPoints.web.http.redirections.entrypoint.to=web-secure
       --entryPoints.web.http.redirections.entrypoint.scheme=https
       --entryPoints.web-secure.address=:443
+      --ping=true
       --api=false
       --api.dashboard=false
       --providers.docker=true
@@ -50,10 +56,11 @@ services:
       - traefik.http.routers.traefik.tls.certResolver=lets-encrypt
       - traefik.http.routers.traefik.middlewares=basic-auth@file,www-to-https@file
       - traefik.http.services.traefik.loadBalancer.server.port=8080
+    healthcheck:
+      test: traefik healthcheck --ping
 
   php:
-    <<: *php
-    <<: *logging
+    <<: [ *php, *logging ]
     labels:
       - traefik.enable=true
       - traefik.http.routers.php.entryPoints=web-secure
@@ -63,14 +70,16 @@ services:
       - traefik.http.routers.php.middlewares=www-to-https@file
 
   queue:
-    <<: *php
-    <<: *logging
+    <<: [ *php, *logging ]
     command: php artisan horizon
+    healthcheck:
+      test: php artisan horizon:status
 
   scheduler:
-    <<: *php
-    <<: *logging
+    <<: [ *php, *logging ]
     command: supercronic /srv/docker/php/config/schedule.cron
+    healthcheck:
+      disable: true
 
   mysql:
     <<: *logging
@@ -82,6 +91,9 @@ services:
       MYSQL_DATABASE: $DB_DATABASE
       MYSQL_USER: $DB_USERNAME
       MYSQL_PASSWORD: $DB_PASSWORD
+      MYSQL_ROOT_PASSWORD: $DB_PASSWORD
+    healthcheck:
+      test: mysqladmin ping
 
   redis:
     <<: *logging
@@ -89,17 +101,18 @@ services:
     restart: unless-stopped
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: redis-cli ping
 
   actions:
-    <<: *php
-    <<: *logging
+    <<: [ *php, *logging ]
     restart: no
     command:
       - /bin/sh
       - -c
       - |
         echo "Running migration..."
-        php artisan migrate --force --step
+        php artisan migrate --force --step --isolated
 
 volumes:
   redis-data:
