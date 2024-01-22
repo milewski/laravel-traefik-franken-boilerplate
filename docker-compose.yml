@@ -3,7 +3,7 @@ version: "3.8"
 x-php: &php
   build:
     context: docker/php
-    dockerfile: php.localhostelopment.dockerfile
+    dockerfile: php.development.dockerfile
   restart: unless-stopped
   working_dir: /srv
   volumes:
@@ -91,21 +91,12 @@ services:
     image: bitnami/minio:2024
     volumes:
       - minio-data:/bitnami/minio/data
-      - ./traefik/tls/rootCA.pem:/usr/local/share/ca-certificates/rootCA.crt
-      - ./traefik/tls/key.pem:/certs/private.key
-      - ./traefik/tls/cert.pem:/certs/public.crt
+      - ./docker/php/ca-certificates/rootCA.pem:/certs/CAs/rootCA.pem
     environment:
-      BITNAMI_DEBUG: true
       MINIO_ROOT_USER: $AWS_ACCESS_KEY_ID
       MINIO_ROOT_PASSWORD: $AWS_SECRET_ACCESS_KEY
       MINIO_DEFAULT_BUCKETS: $AWS_BUCKET:public
-      MINIO_BROWSER_REDIRECT_URL: https://minio.docker.localhost
-#      MINIO_SERVER_URL: https://s3.docker.localhost
-#      MINIO_USE_SSL: true
-#      CONSOLE_SECURE_TLS_REDIRECT: "off"
-
-#      MINIO_SCHEME: https
-#      MINIO_SERVER_URL: https://minio.docker.localhost
+      MINIO_SERVER_URL: https://s3.docker.localhost
     labels:
       - traefik.enable=true
       - traefik.http.routers.minio.service=minio
@@ -120,10 +111,7 @@ services:
       - traefik.http.routers.minio-console.tls=true
       - traefik.http.services.minio-console.loadBalancer.server.port=9001
 
-
 volumes:
   redis-data:
   mysql-data:
   minio-data:
-
-## mc alias set mycloud https://s3.docker.localhost ...

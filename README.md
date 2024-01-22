@@ -36,7 +36,8 @@ Download [mkcert](https://github.com/FiloSottile/mkcert), a tool for generating 
 Execute the following command in your terminal after obtaining the mkcert binary:
 
 ```shell
-mkcert -install -cert-file ./traefik/tls/cert.pem -key-file ./traefik/tls/key.pem "*.docker.localhost" docker.localhost "*.docker.dev" docker.dev
+mkcert -install -cert-file ./traefik/tls/cert.pem -key-file ./traefik/tls/key.pem "*.docker.localhost" docker.localhost
+"$(mkcert -CAROOT)/rootCA.pem" ./docker/php/ca-certificates/rootCA.pem
 ```
 > **Note**: If you plan to use other domains, simply replace `docker.localhost` with the desired domain. You can add multiple domains to the list as needed. Keep in mind that any domain not ending in `.localhost` will require a manual edit of the hosts file.
 

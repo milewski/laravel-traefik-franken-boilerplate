@@ -15,7 +15,7 @@ RUN curl -L -o /tmp/xdebug.tar.gz https://github.com/xdebug/xdebug/archive/3.3.1
 # Install Composer and enable all necessary dependencies for laravel to function
 RUN curl -sS https://getcomposer.org/installer | php && \
     mv composer.phar /usr/local/bin/composer && \
-    apk add --no-cache curl-dev libxml2-dev oniguruma-dev linux-headers && \
+    apk add --no-cache curl-dev libxml2-dev oniguruma-dev linux-headers ca-certificates && \
     docker-php-ext-install -j$(nproc) \
         bcmath curl mbstring pcntl pdo pdo_mysql xml \
         redis/phpredis-6.0.2 \
@@ -39,6 +39,11 @@ RUN mv /usr/local/etc/php/php.ini-development /usr/local/etc/php/conf.d/php.ini-
 
 COPY ./config/php-config.development.ini /usr/local/etc/php/conf.d/php-config.development.ini
 COPY ./config/Caddyfile /etc/caddy/Caddyfile
+
+# This is necessary to make minio to work locally
+COPY ca-certificates/*.pem /usr/local/share/ca-certificates
+
+RUN update-ca-certificates
 
 USER composer
 
