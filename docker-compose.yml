@@ -3,7 +3,7 @@ version: "3.8"
 x-php: &php
   build:
     context: docker/php
-    dockerfile: php.development.dockerfile
+    dockerfile: php.localhostelopment.dockerfile
   restart: unless-stopped
   working_dir: /srv
   volumes:
@@ -39,6 +39,10 @@ services:
       - traefik.http.routers.traefik.service=api@internal
       - traefik.http.routers.traefik.tls=true
       - traefik.http.services.traefik.loadBalancer.server.port=8080
+    networks:
+      default:
+        aliases:
+          - s3.docker.localhost
 
   php:
     <<: *php
@@ -83,6 +87,43 @@ services:
       - traefik.http.routers.mailpit.tls=true
       - traefik.http.services.mailpit.loadBalancer.server.port=8025
 
+  minio:
+    image: bitnami/minio:2024
+    volumes:
+      - minio-data:/bitnami/minio/data
+      - ./traefik/tls/rootCA.pem:/usr/local/share/ca-certificates/rootCA.crt
+      - ./traefik/tls/key.pem:/certs/private.key
+      - ./traefik/tls/cert.pem:/certs/public.crt
+    environment:
+      BITNAMI_DEBUG: true
+      MINIO_ROOT_USER: $AWS_ACCESS_KEY_ID
+      MINIO_ROOT_PASSWORD: $AWS_SECRET_ACCESS_KEY
+      MINIO_DEFAULT_BUCKETS: $AWS_BUCKET:public
+      MINIO_BROWSER_REDIRECT_URL: https://minio.docker.localhost
+#      MINIO_SERVER_URL: https://s3.docker.localhost
+#      MINIO_USE_SSL: true
+#      CONSOLE_SECURE_TLS_REDIRECT: "off"
+
+#      MINIO_SCHEME: https
+#      MINIO_SERVER_URL: https://minio.docker.localhost
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.minio.service=minio
+      - traefik.http.routers.minio.entryPoints=web-secure
+      - traefik.http.routers.minio.rule=Host(`s3.docker.localhost`)
+      - traefik.http.routers.minio.tls=true
+      - traefik.http.services.minio.loadBalancer.server.port=9000
+
+      - traefik.http.routers.minio-console.service=minio-console
+      - traefik.http.routers.minio-console.entryPoints=web-secure
+      - traefik.http.routers.minio-console.rule=Host(`minio.docker.localhost`)
+      - traefik.http.routers.minio-console.tls=true
+      - traefik.http.services.minio-console.loadBalancer.server.port=9001
+
+
 volumes:
   redis-data:
   mysql-data:
+  minio-data:
+
+## mc alias set mycloud https://s3.docker.localhost ...
