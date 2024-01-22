@@ -15,7 +15,7 @@ RUN curl -L -o /tmp/xdebug.tar.gz https://github.com/xdebug/xdebug/archive/3.3.1
 # Install Composer and enable all necessary dependencies for laravel to function
 RUN curl -sS https://getcomposer.org/installer | php && \
     mv composer.phar /usr/local/bin/composer && \
-    apk add --no-cache curl-dev libxml2-dev oniguruma-dev linux-headers && \
+    apk add --no-cache curl-dev libxml2-dev oniguruma-dev linux-headers ca-certificates && \
     docker-php-ext-install -j$(nproc) \
         bcmath curl mbstring pcntl pdo pdo_mysql xml \
         redis/phpredis-6.0.2 \
@@ -39,6 +39,20 @@ RUN mv /usr/local/etc/php/php.ini-development /usr/local/etc/php/conf.d/php.ini-
 
 COPY ./config/php-config.development.ini /usr/local/etc/php/conf.d/php-config.development.ini
 COPY ./config/Caddyfile /etc/caddy/Caddyfile
+
+# This is necessary to make minio to work locally
+COPY ca-certificates/*.pem /usr/local/share/ca-certificates
+
+RUN update-ca-certificates
+
+# This is necessary to make minio work on .localhost domains, related to this: https://github.com/curl/curl/issues/11104
+RUN apk add --no-cache alpine-sdk && \
+    wget -q "https://github.com/curl/curl/releases/download/curl-7_84_0/curl-7.84.0.zip"  \
+         -O /tmp/curl-7.84.0.zip && \
+    cd /tmp && unzip /tmp/curl-7.84.0.zip && cd curl-7.84.0 && \
+    ./configure --with-openssl && make && make install && \
+    apk del alpine-sdk && \
+    rm -rf /tmp/curl-*
 
 USER composer
 
