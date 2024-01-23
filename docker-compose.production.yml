@@ -3,7 +3,9 @@ version: "3.8"
 x-php: &php
   build:
     context: docker/php
-    dockerfile: php.production.dockerfile
+    dockerfile: php.dockerfile
+    args:
+      environment: production
   restart: unless-stopped
   working_dir: /srv
   volumes:
