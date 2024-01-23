@@ -5,7 +5,7 @@ x-php: &php
     context: docker/php
     dockerfile: php.dockerfile
     args:
-      environment: production
+      ENVIRONMENT: production
   restart: unless-stopped
   working_dir: /srv
   volumes:

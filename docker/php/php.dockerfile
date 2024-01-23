@@ -1,4 +1,4 @@
-ARG environment
+ARG ENVIRONMENT
 
 FROM dunglas/frankenphp:sha-effb580-php8.3-alpine as base
 
@@ -62,7 +62,7 @@ RUN mv /usr/local/etc/php/php.ini-production /usr/local/etc/php/conf.d/php.ini-p
 
 COPY ./config/php-config.production.ini /usr/local/etc/php/conf.d/php-config.production.ini
 
-FROM ${environment} as final-step
+FROM ${ENVIRONMENT} as final-step
 
 COPY ./config/Caddyfile /etc/caddy/Caddyfile
 
