@@ -42,8 +42,12 @@ RUN apk add --no-cache ca-certificates alpine-sdk \
     # This is necessary to make minio work on .localhost domains, related to this: https://github.com/curl/curl/issues/11104
     && wget -q "https://github.com/curl/curl/releases/download/curl-7_84_0/curl-7.84.0.zip" \
             -O /tmp/curl-7.84.0.zip \
-    && cd /tmp && unzip /tmp/curl-7.84.0.zip && cd curl-7.84.0 \
-    && ./configure --with-openssl && make && make install \
+    && cd /tmp \
+    && unzip /tmp/curl-7.84.0.zip \
+    && cd curl-7.84.0 \
+    && ./configure --with-openssl \
+    && make \
+    && make install \
     && apk del alpine-sdk \
     && rm -rf /tmp/curl-*
 
@@ -62,7 +66,7 @@ RUN mv /usr/local/etc/php/php.ini-production /usr/local/etc/php/conf.d/php.ini-p
 
 COPY ./config/php-config.production.ini /usr/local/etc/php/conf.d/php-config.production.ini
 
-FROM ${ENVIRONMENT} as final-step
+FROM ${ENVIRONMENT}
 
 COPY ./config/Caddyfile /etc/caddy/Caddyfile
 
