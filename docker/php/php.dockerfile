@@ -1,6 +1,6 @@
 ARG ENVIRONMENT
 
-FROM dunglas/frankenphp:sha-effb580-php8.3-alpine as base
+FROM dunglas/frankenphp:1.1-php8.3-alpine as base
 
 # Prepare redis extension
 RUN curl -L -o /tmp/redis.tar.gz https://github.com/phpredis/phpredis/archive/6.0.2.tar.gz \
@@ -11,7 +11,7 @@ RUN curl -L -o /tmp/redis.tar.gz https://github.com/phpredis/phpredis/archive/6.
 # Install Composer and enable all necessary dependencies for laravel to function
 RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer \
-    && apk add --no-cache curl-dev libxml2-dev oniguruma-dev linux-headers \
+    && apk add --no-cache git curl-dev libxml2-dev oniguruma-dev linux-headers \
     && docker-php-ext-install -j$(nproc) \
            bcmath curl mbstring pcntl pdo pdo_mysql xml \
            redis/phpredis-6.0.2
