@@ -13,7 +13,7 @@ RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer \
     && apk add --no-cache git curl-dev libxml2-dev oniguruma-dev linux-headers \
     && docker-php-ext-install -j$(nproc) \
-           bcmath curl mbstring pcntl pdo pdo_mysql xml \
+           bcmath curl intl mbstring pcntl pdo pdo_mysql xml \
            redis/phpredis-6.0.2
 
 # Install a CRON alternative which is designed to work with containers!
