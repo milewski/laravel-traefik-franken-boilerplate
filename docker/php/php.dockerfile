@@ -11,9 +11,9 @@ RUN curl -L -o /tmp/redis.tar.gz https://github.com/phpredis/phpredis/archive/6.
 # Install Composer and enable all necessary dependencies for laravel to function
 RUN curl -sS https://getcomposer.org/installer | php \
     && mv composer.phar /usr/local/bin/composer \
-    && apk add --no-cache git curl-dev libxml2-dev oniguruma-dev linux-headers \
+    && apk add --no-cache curl-dev git icu-dev libxml2-dev libzip-dev oniguruma-dev linux-headers \
     && docker-php-ext-install -j$(nproc) \
-           bcmath curl intl mbstring pcntl pdo pdo_mysql xml \
+           bcmath curl intl mbstring pcntl pdo pdo_mysql xml zip \
            redis/phpredis-6.0.2
 
 # Install a CRON alternative which is designed to work with containers!
