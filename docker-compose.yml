@@ -10,7 +10,8 @@ x-php: &php
   working_dir: /srv
   volumes:
     - .:/srv
-    - ~/.composer:/home/composer/.composer
+    - ~/.composer:/home/composer/.cache/composer
+    - ~/.composer/auth.json:/config/composer/auth.json
     - ./vendor:/srv/vendor:delegated
 
 services:
