@@ -1,5 +1,3 @@
-version: "3.8"
-
 x-php: &php
   build:
     context: docker/php
