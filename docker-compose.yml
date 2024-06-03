@@ -1,5 +1,3 @@
-version: "3.8"
-
 x-php: &php
   build:
     context: docker/php
@@ -42,10 +40,6 @@ services:
       - traefik.http.routers.traefik.service=api@internal
       - traefik.http.routers.traefik.tls=true
       - traefik.http.services.traefik.loadBalancer.server.port=8080
-    networks:
-      default:
-        aliases:
-          - s3.docker.localhost
 
   php:
     <<: *php
@@ -90,31 +84,6 @@ services:
       - traefik.http.routers.mailpit.tls=true
       - traefik.http.services.mailpit.loadBalancer.server.port=8025
 
-  minio:
-    image: bitnami/minio:2024
-    volumes:
-      - minio-data:/bitnami/minio/data
-      - ./docker/php/ca-certificates/rootCA.pem:/certs/CAs/rootCA.pem
-    environment:
-      MINIO_ROOT_USER: $AWS_ACCESS_KEY_ID
-      MINIO_ROOT_PASSWORD: $AWS_SECRET_ACCESS_KEY
-      MINIO_DEFAULT_BUCKETS: $AWS_BUCKET:public
-      MINIO_SERVER_URL: https://s3.docker.localhost
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.minio.service=minio
-      - traefik.http.routers.minio.entryPoints=web-secure
-      - traefik.http.routers.minio.rule=Host(`s3.docker.localhost`)
-      - traefik.http.routers.minio.tls=true
-      - traefik.http.services.minio.loadBalancer.server.port=9000
-
-      - traefik.http.routers.minio-console.service=minio-console
-      - traefik.http.routers.minio-console.entryPoints=web-secure
-      - traefik.http.routers.minio-console.rule=Host(`minio.docker.localhost`)
-      - traefik.http.routers.minio-console.tls=true
-      - traefik.http.services.minio-console.loadBalancer.server.port=9001
-
 volumes:
   redis-data:
   mysql-data:
-  minio-data:
