@@ -15,7 +15,7 @@ x-php: &php
 services:
 
   traefik:
-    image: traefik:v3.0
+    image: traefik:v3.4.1
     restart: unless-stopped
     command: >-
       --entryPoints.web.address=:80
@@ -55,10 +55,10 @@ services:
 
   scheduler:
     <<: *php
-    command: supercronic /srv/docker/php/config/schedule.cron
+    command: php artisan schedule:work
 
   mysql:
-    image: mysql:8.0-debian
+    image: mysql:9-oracle
     restart: unless-stopped
     volumes:
       - mysql-data:/var/lib/mysql
@@ -69,13 +69,13 @@ services:
       - "3306:3306"
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     restart: unless-stopped
     volumes:
       - redis-data:/data
 
   mailpit:
-    image: axllent/mailpit:v1.12
+    image: axllent/mailpit:v1.26
     restart: unless-stopped
     labels:
       - traefik.enable=true
